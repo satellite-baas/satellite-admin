@@ -1,0 +1,403 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: ingressroutes.traefik.containo.us
+
+spec:
+  group: traefik.containo.us
+  version: v1alpha1
+  names:
+    kind: IngressRoute
+    plural: ingressroutes
+    singular: ingressroute
+  scope: Namespaced
+
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: middlewares.traefik.containo.us
+
+spec:
+  group: traefik.containo.us
+  version: v1alpha1
+  names:
+    kind: Middleware
+    plural: middlewares
+    singular: middleware
+  scope: Namespaced
+
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: ingressroutetcps.traefik.containo.us
+
+spec:
+  group: traefik.containo.us
+  version: v1alpha1
+  names:
+    kind: IngressRouteTCP
+    plural: ingressroutetcps
+    singular: ingressroutetcp
+  scope: Namespaced
+
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: ingressrouteudps.traefik.containo.us
+
+spec:
+  group: traefik.containo.us
+  version: v1alpha1
+  names:
+    kind: IngressRouteUDP
+    plural: ingressrouteudps
+    singular: ingressrouteudp
+  scope: Namespaced
+
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: tlsoptions.traefik.containo.us
+
+spec:
+  group: traefik.containo.us
+  version: v1alpha1
+  names:
+    kind: TLSOption
+    plural: tlsoptions
+    singular: tlsoption
+  scope: Namespaced
+
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: tlsstores.traefik.containo.us
+
+spec:
+  group: traefik.containo.us
+  version: v1alpha1
+  names:
+    kind: TLSStore
+    plural: tlsstores
+    singular: tlsstore
+  scope: Namespaced
+
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: traefikservices.traefik.containo.us
+
+spec:
+  group: traefik.containo.us
+  version: v1alpha1
+  names:
+    kind: TraefikService
+    plural: traefikservices
+    singular: traefikservice
+  scope: Namespaced
+
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: traefik-ingress-controller
+
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - services
+      - endpoints
+      - secrets
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - extensions
+      - networking.k8s.io
+    resources:
+      - ingresses
+      - ingressclasses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - extensions
+    resources:
+      - ingresses/status
+    verbs:
+      - update
+  - apiGroups:
+      - traefik.containo.us
+    resources:
+      - middlewares
+      - ingressroutes
+      - traefikservices
+      - ingressroutetcps
+      - ingressrouteudps
+      - tlsoptions
+      - tlsstores
+    verbs:
+      - get
+      - list
+      - watch
+
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: traefik-ingress-controller
+
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: traefik-ingress-controller
+subjects:
+  - kind: ServiceAccount
+    name: traefik-ingress-controller
+    namespace: admin
+
+
+---
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: admin
+
+---
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  namespace: admin
+  name: traefik-ingress-controller
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: traefik
+  namespace: admin
+  labels: 
+    app: traefik
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: traefik
+  template:
+    metadata:
+      labels:
+        app: traefik
+    spec:
+      serviceAccountName: traefik-ingress-controller
+      containers: 
+        - name: traefik
+          image: traefik:v2.3
+          args:
+            - --api.insecure
+            - --accesslog
+            - --entrypoints.web.Address=:80
+            - --entrypoints.websecure.Address=:443
+            - --certificatesresolvers.myresolver.acme.tlschallenge
+            - --certificatesresolvers.myresolver.acme.email=ilkussainov@gmail.com
+            - --certificatesresolvers.myresolver.acme.storage=acme.json
+            - --entrypoints.web.http.redirections.entryPoint.to=websecure
+            - --entrypoints.web.http.redirections.entryPoint.scheme=https
+            - --providers.kubernetescrd
+            - --certificatesresolvers.myresolver.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
+          ports:
+            - name: web
+              containerPort: 80
+            - name: websecure
+              containerPort: 443
+            - name: admin
+              containerPort: 8080
+
+--- 
+
+apiVersion: v1
+kind: Service
+metadata: 
+  name: traefik
+  namespace: admin
+spec:
+  type: LoadBalancer
+  ports:
+    - protocol: TCP
+      name: web
+      port: 80
+      targetPort: 80
+    - protocol: TCP
+      name: websecure
+      port: 443
+      targetPort: 443
+    - protocol: TCP
+      name: admin
+      port: 8080
+      targetPort: 8080
+  selector: 
+    app: traefik
+
+---
+
+
+## ADMIN APP SERVER STACK
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: admin-app-server
+  namespace: admin
+  labels:
+    traefik: enabled
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: HostRegexp(`admin.{.+}.{.+}`)
+      kind: Rule
+      services:
+      - name: admin-app-server
+        namespace: admin
+        port: 3000
+  tls:
+    certResolver: myresolver
+
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin-app-server
+  namespace: admin
+  labels:
+    type: admin-app-server
+spec:
+  template:
+    metadata:
+      namespace: admin
+      labels:
+        type: admin-app-server
+    spec:
+      serviceAccountName: admin-app
+      containers:
+        - name: admin-app-server
+          image: ilyaskussainov/admin-app:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          env:
+            - name: SESSION_SECRET
+              value: verysecretstring
+            - name: DB_PASSWORD
+              value: password
+            - name: DB_USER
+              value: postgres
+            - name: DB_NAME
+              value: postgres
+            - name: DB_HOST
+              value: "admin-database"
+  selector:
+    matchLabels:
+      type: admin-app-server
+  replicas: 1
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: admin-app-server
+  namespace: admin
+  labels:
+    type: admin-app-server
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3000
+      targetPort: 3000
+  selector:
+    type: admin-app-server
+
+---
+
+### ADMIN DATABASE STACK
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin-database
+  namespace: admin
+  labels:
+    type: admin-database
+spec:
+  template:
+    metadata:
+      namespace: admin
+      labels:
+        type: admin-database
+    spec:
+      containers:
+        - name: admin-database
+          image: postgres
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_PASSWORD
+              value: password
+  selector:
+    matchLabels:
+      type: admin-database
+  replicas: 1
+
+--- 
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: admin-database
+  namespace: admin
+  labels:
+    type: admin-database
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5432
+      targetPort: 5432
+  selector:
+    type: admin-database
+
+---
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  namespace: admin
+  name: admin-app
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cluster-admin-permission
+subjects:
+- kind: ServiceAccount
+  name: admin-app
+  namespace: admin
+roleRef:
+  kind: ClusterRole 
+  name: cluster-admin 
+  apiGroup: rbac.authorization.k8s.io

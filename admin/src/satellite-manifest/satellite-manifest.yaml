@@ -1,0 +1,173 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${SATELLITE_NAME}
+
+---
+
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: satellite-web-server
+  namespace: ${SATELLITE_NAME}
+  labels:
+    traefik: enabled
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: HostRegexp(`${SATELLITE_NAME}.{.+}.{.+}`) 
+      kind: Rule
+      services:
+      - name: satellite-server
+        namespace: ${SATELLITE_NAME}
+        passHostHeader: true
+        port: 80
+  tls:
+    certResolver: myresolver
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: satellite-server
+  namespace: ${SATELLITE_NAME}
+  labels:
+    type: satellite-server
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+      name: web-server
+    - port: 5000
+      targetPort: 5000
+      name: app-server
+  selector:
+    type: satellite-server
+
+---
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: satellite-server
+  namespace: ${SATELLITE_NAME}
+  labels:
+    type: satellite-server
+spec:
+  template:
+    metadata:
+      namespace: ${SATELLITE_NAME}
+      labels:
+        type: satellite-server
+    spec:
+      containers:
+        - name: satellite-web-server
+          image: ilyaskussainov/satellite-webserver:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - mountPath: /media/data
+              name: storage
+        - name: satellite-app
+          image: ilyaskussainov/satellite-app:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5000
+          volumeMounts:
+            - mountPath: /media/data
+              name: storage
+          env:
+            - name: APIKEY
+              value: ${API_KEY}
+            - name: SATNAME
+              value: ${SATELLITE_NAME}
+
+      volumes:
+        - name: storage
+          emptyDir: {}
+  selector:
+    matchLabels:
+      type: satellite-server
+  replicas: 1
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dgraph
+  namespace: ${SATELLITE_NAME}
+  labels:
+    type: dgraph
+spec:
+  selector:
+    matchLabels:
+      type: dgraph
+  template:
+    metadata:
+      namespace: ${SATELLITE_NAME}
+      labels:
+        type: dgraph
+    spec:
+      containers:
+        - name: zero
+          image: dgraph/dgraph:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5080
+              name: grpc-zero
+            - containerPort: 6080
+              name: http-zero
+          volumeMounts:
+            - mountPath: /dgraph
+              name: dgraph-data
+          command: ["dgraph"]
+          args: ["zero", "--my=localhost:5080"]
+        - name: alpha
+          image: dgraph/dgraph:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              name: http-alpha
+            - containerPort: 9080
+              name: grpc-alpha
+          volumeMounts:
+            - mountPath: /dgraph
+              name: dgraph-data
+          command: ["dgraph"]
+          args: ["alpha", "--my=localhost:7080", "--zero=localhost:5080", "--graphql_extensions=false", "--lru_mb=1024", "--whitelist", "0.0.0.0/0"]
+      volumes:
+        - name: dgraph-data
+          emptyDir: {}
+              
+--- 
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: dgraph
+  namespace: ${SATELLITE_NAME}
+  labels:
+    type: dgraph
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5080
+      targetPort: 5080
+      name: grpc-zero
+    - port: 6080
+      targetPort: 6080
+      name: http-zero
+    - port: 8080
+      targetPort: 8080
+      name: http-alpha
+    - port: 9080
+      targetPort: 9080
+      name: grpc-alpha
+  selector:
+    type: dgraph
+
