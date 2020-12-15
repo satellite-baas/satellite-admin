@@ -212,8 +212,8 @@ spec:
             - --certificatesresolvers.myresolver.acme.tlschallenge
             - --certificatesresolvers.myresolver.acme.email=ilkussainov@gmail.com
             - --certificatesresolvers.myresolver.acme.storage=acme.json
-            - --entrypoints.web.http.redirections.entryPoint.to=websecure
-            - --entrypoints.web.http.redirections.entryPoint.scheme=https
+            ## - --entrypoints.web.http.redirections.entryPoint.to=websecure
+            ## - --entrypoints.web.http.redirections.entryPoint.scheme=https
             - --providers.kubernetescrd
             - --certificatesresolvers.myresolver.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
           ports:
@@ -273,6 +273,25 @@ spec:
   tls:
     certResolver: myresolver
 
+---
+
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: admin-app-server-insecure
+  namespace: admin
+  labels:
+    traefik: enabled
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: HostRegexp(`admin.{.+}.{.+}`)
+      kind: Rule
+      services:
+      - name: admin-app-server
+        namespace: admin
+        port: 3000
 
 ---
 

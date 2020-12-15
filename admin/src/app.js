@@ -13,7 +13,9 @@ const makeProxyRouter = require("./routes/proxy");
   const { User, Backend } = sequelize.models;
 
   const app = express();
-  app.use(cors());
+
+  var corsOptions = { origin: "http://localhost:3000", credentials: true };
+  app.use(cors(corsOptions));
 
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
@@ -26,6 +28,9 @@ const makeProxyRouter = require("./routes/proxy");
       secret: process.env.SESSION_SECRET,
       resave: false,
       saveUninitialized: false,
+      cookie: {
+        httpOnly: false,
+      },
     })
   );
 
