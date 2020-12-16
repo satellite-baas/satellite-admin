@@ -212,8 +212,8 @@ spec:
             - --certificatesresolvers.myresolver.acme.tlschallenge
             - --certificatesresolvers.myresolver.acme.email=ilkussainov@gmail.com
             - --certificatesresolvers.myresolver.acme.storage=acme.json
-            ## - --entrypoints.web.http.redirections.entryPoint.to=websecure
-            ## - --entrypoints.web.http.redirections.entryPoint.scheme=https
+            - --entrypoints.web.http.redirections.entryPoint.to=websecure
+            - --entrypoints.web.http.redirections.entryPoint.scheme=https
             - --providers.kubernetescrd
             - --certificatesresolvers.myresolver.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
           ports:
@@ -275,26 +275,6 @@ spec:
 
 ---
 
-apiVersion: traefik.containo.us/v1alpha1
-kind: IngressRoute
-metadata:
-  name: admin-app-server-insecure
-  namespace: admin
-  labels:
-    traefik: enabled
-spec:
-  entryPoints:
-    - web
-  routes:
-    - match: HostRegexp(`admin.{.+}.{.+}`)
-      kind: Rule
-      services:
-      - name: admin-app-server
-        namespace: admin
-        port: 3000
-
----
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -353,6 +333,21 @@ spec:
 
 ### ADMIN DATABASE STACK
 
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: 
+  name: admin-pvc
+  namespace: admin
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: do-block-storage
+
+---
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -376,6 +371,14 @@ spec:
           env:
             - name: POSTGRES_PASSWORD
               value: password
+          volumeMounts:
+            - mountPath: "/var/lib/postgresql/data"
+              name: admin-db-volume
+              subPath: postgres
+      volumes:
+        - name: admin-db-volume
+          persistentVolumeClaim:
+            claimName: admin-pvc
   selector:
     matchLabels:
       type: admin-database

@@ -9,7 +9,7 @@ const makeBackendRouter = require("./routes/backend");
 const makeProxyRouter = require("./routes/proxy");
 
 (async function () {
-  await sequelize.sync({ force: true });
+  await sequelize.sync({});
   const { User, Backend } = sequelize.models;
 
   const app = express();
