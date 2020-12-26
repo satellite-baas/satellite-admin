@@ -3,6 +3,8 @@ const sequelize = require("./models/index");
 const cors = require("cors");
 const uuid = require("uuid").v4;
 const session = require("express-session");
+const redis = require("redis");
+const redisStore = require("connect-redis")(session);
 const configurePassport = require("./helpers/configure-passport");
 const makeAuthRouter = require("./routes/auth");
 const makeBackendRouter = require("./routes/backend");
@@ -14,25 +16,40 @@ const makeProxyRouter = require("./routes/proxy");
 
   const app = express();
 
-  var corsOptions = { origin: "http://localhost:3000", credentials: true };
+  var corsOptions = { origin: true, credentials: true };
   app.use(cors(corsOptions));
 
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
+
+  const redisClient = redis.createClient({
+    host: process.env.REDIS_HOST,
+    port: process.env.REDIS_PORT,
+  });
 
   app.use(
     session({
       genid: (req) => {
         return uuid();
       },
+      store: new redisStore({
+        host: process.env.REDIS_HOST,
+        port: process.env.REDIS_PORT,
+        client: redisClient,
+      }),
+      name: "_redis",
       secret: process.env.SESSION_SECRET,
       resave: false,
       saveUninitialized: false,
       cookie: {
-        httpOnly: false,
+        httpOnly: true,
       },
     })
   );
+
+  if (process.env.NODE_ENV === "production") {
+    sessionOptions.cookie.secure = true;
+  }
 
   const passport = configurePassport(User);
 

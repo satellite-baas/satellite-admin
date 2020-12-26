@@ -44,7 +44,10 @@ function makeBackendController(Backend) {
     const onSuccess = (output) => {
       return res
         .status(201)
-        .send({ message: `Backend ${newBackend.name} created!`, output });
+        .send({
+          message: `Backend ${newBackend.name} created!`,
+          backend: newBackend,
+        });
     };
 
     const onFailure = async (error) => {
