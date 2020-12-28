@@ -65,7 +65,7 @@ spec:
     spec:
       containers:
         - name: satellite-web-server
-          image: ilyaskussainov/satellite-webserver:latest
+          image: ilyaskussainov/satellite-webserver:v2
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
@@ -73,7 +73,7 @@ spec:
             - mountPath: /media/data
               name: storage
         - name: satellite-app
-          image: ilyaskussainov/satellite-app:latest
+          image: ilyaskussainov/satellite-app:v2
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5000
