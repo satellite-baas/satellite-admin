@@ -73,7 +73,50 @@ const tearDownSatellite = (name, onSuccess, onFailure) => {
   });
 };
 
+const createKubectlCommand = (satelliteName, dirPath) => {
+  const arguments = ["-c", "kubectl "];
+};
+
+const uploadStaticFiles = (satelliteName, dirPath) => {};
+
+const getWebServerPodName = async (satelliteName) => {
+  const arguments = [
+    "get",
+    "pod",
+    `-n=${satelliteName}`,
+    "-l",
+    "type=satellite-server",
+    "-o",
+    "name",
+  ];
+
+  const child = spawn("kubectl", arguments);
+
+  child.stdout.on("data", (data) => {
+    console.log(`data: ${data}`);
+  });
+
+  child.stderr.on("data", (data) => {
+    console.log(`data: ${data}`);
+  });
+
+  child.on("exit", (code, signal) => {
+    console.log(`process exited with code ${code} and signal ${signal}`);
+    // if (code !== 0) {
+    //   return onFailure(output);
+    // }
+
+    // return onSuccess(output);
+  });
+
+  child.on("error", (error) => {
+    console.error(`error: ${error.message}`);
+    // return onFailure([error.message]);
+  });
+};
+
 module.exports = {
   spinUpSatellite,
   tearDownSatellite,
+  getWebServerPodName,
 };

@@ -9,6 +9,7 @@ const configurePassport = require("./helpers/configure-passport");
 const makeAuthRouter = require("./routes/auth");
 const makeBackendRouter = require("./routes/backend");
 const makeProxyRouter = require("./routes/proxy");
+const { uploadRouter } = require("./routes/upload");
 
 (async function () {
   await sequelize.sync({});
@@ -18,6 +19,8 @@ const makeProxyRouter = require("./routes/proxy");
 
   var corsOptions = { origin: true, credentials: true };
   app.use(cors(corsOptions));
+
+  app.use(uploadRouter);
 
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
