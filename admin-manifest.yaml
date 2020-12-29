@@ -251,6 +251,74 @@ spec:
 
 ---
 
+## ADMIN WEB SERVER STACK
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: admin-web-server
+  namespace: admin
+  labels:
+    traefik: enabled
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: HostRegexp(`admin.{.+}.{.+}`) && (Path(`/{p:.+\..+}`) || Path(`/`))
+      kind: Rule
+      services:
+      - name: admin-web-server
+        namespace: admin
+        port: 80
+  tls:
+    certResolver: myresolver
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin-web-server
+  namespace: admin
+  labels:
+    type: admin-web-server
+spec:
+  template:
+    metadata:
+      namespace: admin
+      labels:
+        type: admin-web-server
+    spec:
+      containers:
+        - name: admin-web-server
+          image: ilyaskussainov/admin-webserver:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+  selector:
+    matchLabels:
+      type: admin-web-server
+  replicas: 1
+
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: admin-web-server
+  namespace: admin
+  labels:
+    type: admin-web-server
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+  selector:
+    type: admin-web-server
+
+---
+
 
 ## ADMIN APP SERVER STACK
 apiVersion: traefik.containo.us/v1alpha1
@@ -299,6 +367,10 @@ spec:
           env:
             - name: SESSION_SECRET
               value: verysecretstring
+            - name: REDIS_PORT
+              value: '6379'
+            - name: REDIS_HOST
+              value: "admin-session"
             - name: DB_PASSWORD
               value: password
             - name: DB_USER
@@ -423,3 +495,47 @@ roleRef:
   kind: ClusterRole 
   name: cluster-admin 
   apiGroup: rbac.authorization.k8s.io
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin-session
+  namespace: admin
+  labels:
+    type: admin-session
+spec:
+  template:
+    metadata:
+      namespace: admin
+      labels:
+        type: admin-session
+    spec:
+      containers:
+        - name: admin-session
+          image: redis:6.2-rc1-alpine3.12
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 6379
+  selector:
+    matchLabels:
+      type: admin-session
+  replicas: 1
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: admin-session
+  namespace: admin
+  labels:
+    type: admin-session
+spec:
+  type: ClusterIP
+  ports:
+    - port: 6379
+      targetPort: 6379
+  selector:
+    type: admin-session
