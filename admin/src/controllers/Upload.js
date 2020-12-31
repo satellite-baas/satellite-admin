@@ -1,7 +1,10 @@
 const multer = require("multer");
 const fs = require("fs-extra");
 const extract = require("extract-zip");
-const { getWebServerPodName } = require("../helpers/kubernetes");
+const {
+  getWebServerPodName,
+  uploadStaticFiles,
+} = require("../helpers/kubernetes");
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -40,6 +43,12 @@ const uploadFile = async (req, res, next) => {
   console.log("Did I get here?");
 
   const podName = await getWebServerPodName("testapp");
+
+  try {
+    uploadStaticFiles("testapp", `/uploads/${satelliteId}`);
+  } catch (err) {
+    console.log(err);
+  }
   console.log(podName);
 
   return res.json({ message: "uploaded!" });

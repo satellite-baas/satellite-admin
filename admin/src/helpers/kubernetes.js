@@ -1,4 +1,5 @@
 const { spawn } = require("child_process");
+const { resolve } = require("path");
 
 const CREATE_ARGUMENTS = [
   "-c",
@@ -77,7 +78,49 @@ const createKubectlCommand = (satelliteName, dirPath) => {
   const arguments = ["-c", "kubectl "];
 };
 
-const uploadStaticFiles = (satelliteName, dirPath) => {};
+const uploadStaticFiles = async (satelliteName, dirPath) => {
+  const podName = await getWebServerPodName(satelliteName).then((str) =>
+    str.trim().slice(4)
+  );
+
+  return new Promise((resolve, reject) => {
+    const arguments = [
+      "cp",
+      dirPath,
+      `${satelliteName}/${podName}:/`,
+      "-c",
+      "satellite-web-server",
+    ];
+    console.log(dirPath);
+    console.log(`${satelliteName}/${podName}:/`);
+
+    const child = spawn("kubectl", arguments);
+
+    child.stdout.on("data", (data) => {
+      console.log(`data: ${data}`);
+    });
+
+    child.stderr.on("data", (data) => {
+      console.log(`data: ${data}`);
+      reject(data.toString());
+    });
+
+    child.on("exit", (code, signal) => {
+      console.log(`process exited with code ${code} and signal ${signal}`);
+
+      if (code !== 0) {
+        reject("Something went wrong");
+      }
+
+      resolve();
+    });
+
+    child.on("error", (error) => {
+      console.error(`error: ${error.message}`);
+      reject(error.message);
+    });
+  });
+};
 
 const getWebServerPodName = (satelliteName) => {
   return new Promise((resolve, reject) => {
@@ -126,4 +169,5 @@ module.exports = {
   spinUpSatellite,
   tearDownSatellite,
   getWebServerPodName,
+  uploadStaticFiles,
 };
