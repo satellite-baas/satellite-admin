@@ -74,10 +74,6 @@ const tearDownSatellite = (name, onSuccess, onFailure) => {
   });
 };
 
-const createKubectlCommand = (satelliteName, dirPath) => {
-  const arguments = ["-c", "kubectl "];
-};
-
 const uploadStaticFiles = async (satelliteName, dirPath) => {
   const podName = await getWebServerPodName(satelliteName).then((str) =>
     str.trim().slice(4)
@@ -85,16 +81,11 @@ const uploadStaticFiles = async (satelliteName, dirPath) => {
 
   return new Promise((resolve, reject) => {
     const arguments = [
-      "cp",
-      dirPath,
-      `${satelliteName}/${podName}:/`,
       "-c",
-      "satellite-web-server",
+      `cd ${dirPath} && tar cvf - * | kubectl exec -i -n ${satelliteName} ${podName} -c satellite-web-server -- tar xf - -C /media/data`,
     ];
-    console.log(dirPath);
-    console.log(`${satelliteName}/${podName}:/`);
 
-    const child = spawn("kubectl", arguments);
+    const child = spawn("sh", arguments);
 
     child.stdout.on("data", (data) => {
       console.log(`data: ${data}`);
@@ -102,7 +93,7 @@ const uploadStaticFiles = async (satelliteName, dirPath) => {
 
     child.stderr.on("data", (data) => {
       console.log(`data: ${data}`);
-      reject(data.toString());
+      // reject(data.toString());
     });
 
     child.on("exit", (code, signal) => {
