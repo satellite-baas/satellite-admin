@@ -5,7 +5,7 @@ const { getWebServerPodName } = require("../helpers/kubernetes");
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, `/app/uploads/`);
+    cb(null, "/uploads");
   },
   filename: (req, file, cb) => {
     cb(null, file.originalname);
@@ -17,7 +17,7 @@ const upload = multer({ storage }).single("file");
 const unZip = async (filePath, dirName) => {
   console.log("unzipping", filePath);
 
-  const fullDirPath = `/app/uploads/${dirName}`;
+  const fullDirPath = `/uploads/${dirName}`;
 
   await fs.remove(fullDirPath);
 
@@ -35,10 +35,12 @@ const uploadFile = async (req, res, next) => {
   const satelliteId = req.body.id;
 
   await unZip(filePath, satelliteId);
-
+  console.log("got here");
   await fs.remove(filePath);
+  console.log("Did I get here?");
 
-  getWebServerPodName();
+  const podName = await getWebServerPodName("testapp");
+  console.log(podName);
 
   return res.json({ message: "uploaded!" });
 };

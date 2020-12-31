@@ -6,6 +6,7 @@ RUN curl https://storage.googleapis.com/kubernetes-release/release/$(curl -s htt
 RUN chmod +x /usr/local/bin/kubectl
 
 RUN apk add gettext libintl
+RUN mkdir uploads
 
 WORKDIR /app
 

@@ -79,39 +79,46 @@ const createKubectlCommand = (satelliteName, dirPath) => {
 
 const uploadStaticFiles = (satelliteName, dirPath) => {};
 
-const getWebServerPodName = async (satelliteName) => {
-  const arguments = [
-    "get",
-    "pod",
-    `-n=${satelliteName}`,
-    "-l",
-    "type=satellite-server",
-    "-o",
-    "name",
-  ];
+const getWebServerPodName = (satelliteName) => {
+  return new Promise((resolve, reject) => {
+    const arguments = [
+      "get",
+      "pod",
+      `-n=${satelliteName}`,
+      "-l",
+      "type=satellite-server",
+      "-o",
+      "name",
+    ];
 
-  const child = spawn("kubectl", arguments);
+    const child = spawn("kubectl", arguments);
 
-  child.stdout.on("data", (data) => {
-    console.log(`data: ${data}`);
-  });
+    let podName;
 
-  child.stderr.on("data", (data) => {
-    console.log(`data: ${data}`);
-  });
+    child.stdout.on("data", (data) => {
+      console.log(`data: ${data}`);
+      podName = data.toString();
+    });
 
-  child.on("exit", (code, signal) => {
-    console.log(`process exited with code ${code} and signal ${signal}`);
-    // if (code !== 0) {
-    //   return onFailure(output);
-    // }
+    child.stderr.on("data", (data) => {
+      console.log(`data: ${data}`);
+      reject(data.toString());
+    });
 
-    // return onSuccess(output);
-  });
+    child.on("exit", (code, signal) => {
+      console.log(`process exited with code ${code} and signal ${signal}`);
 
-  child.on("error", (error) => {
-    console.error(`error: ${error.message}`);
-    // return onFailure([error.message]);
+      if (code !== 0) {
+        reject("Something went wrong");
+      }
+
+      resolve(podName);
+    });
+
+    child.on("error", (error) => {
+      console.error(`error: ${error.message}`);
+      reject(error.message);
+    });
   });
 };
 
