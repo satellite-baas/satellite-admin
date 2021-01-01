@@ -13,6 +13,7 @@ function makeCustomSatelliteController(Backend) {
     const file = req.files[0];
     console.log(`File: ${file}`);
     console.log(`Id: ${id}`);
+    console.log(req.body);
     if (!id || !file) return res.status(422).send();
 
     const schemaBuffer = file.buffer;
@@ -33,6 +34,8 @@ function makeCustomSatelliteController(Backend) {
 
       return res.status(201).send(response.data);
     } catch (error) {
+      // Need to handle error for uploads that are too large. The schema should not exceed a few kbytes.
+      console.log(`Your error: ${error}`);
       if (error.response) {
         return res.status(error.response.status).send(error.response.data);
       } else {

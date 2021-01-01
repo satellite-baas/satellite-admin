@@ -16,7 +16,7 @@ function makeProxyRouter(Backend) {
     sendAdminGQL,
   } = makeCustomSatelliteController(Backend);
 
-  router.post("/admin/schema", upload.any(), ensureLogIn, uploadSchema);
+  router.post("/admin/schema", ensureLogIn, upload.any(), uploadSchema);
 
   router.get("/files/:id", ensureLogIn, getFiles);
 

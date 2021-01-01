@@ -12,7 +12,7 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ storage }).single("file");
+const upload = multer({ storage }).any();
 
 const unZip = async (filePath, dirName) => {
   console.log("unzipping", filePath);
@@ -32,7 +32,7 @@ const unZip = async (filePath, dirName) => {
 
 const makeFileUploadController = (Backend) => {
   const uploadFile = async (req, res, next) => {
-    const filePath = req.file.path;
+    const filePath = req.files[0].path;
     const id = req.body.id;
     const UserId = req.user.id;
 
@@ -44,7 +44,11 @@ const makeFileUploadController = (Backend) => {
 
     const satelliteName = satellite.name;
 
-    await unZip(filePath, satelliteName);
+    try {
+      await unZip(filePath, satelliteName);
+    } catch (err) {
+      return res.status(400).send(err.message);
+    }
     await fs.remove(filePath);
 
     try {
