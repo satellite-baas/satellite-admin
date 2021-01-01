@@ -51,7 +51,7 @@ const makeFileUploadController = (Backend) => {
       await uploadStaticFiles(satelliteName, `/uploads/${satelliteName}`);
     } catch (err) {
       console.log(err);
-      res.sendStatus(500);
+      return res.sendStatus(500);
     }
 
     return res.json({ message: "uploaded!" });

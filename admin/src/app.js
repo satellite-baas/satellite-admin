@@ -11,7 +11,7 @@ const makeProxyRouter = require("./routes/proxy");
 const { makeFileUploadRouter } = require("./routes/upload");
 
 (async function () {
-  await sequelize.sync({});
+  await sequelize.sync({ force: true });
   const { User, Backend } = sequelize.models;
 
   const app = express();

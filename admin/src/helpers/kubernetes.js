@@ -81,7 +81,7 @@ const uploadStaticFiles = async (satelliteName, dirPath) => {
   return new Promise((resolve, reject) => {
     const arguments = [
       "-c",
-      `cd ${dirPath} && tar cvf - * | kubectl exec -i -n ${satelliteName} ${podName} -c satellite-web-server -- tar xf - -C /media/data`,
+      `cd ${dirPath} && tar cvf - * | kubectl exec -i -n ${satelliteName} ${podName} -- tar xf - -C /media/data`,
     ];
 
     const child = spawn("sh", arguments);
@@ -119,7 +119,7 @@ const getWebServerPodName = (satelliteName) => {
       "pod",
       `-n=${satelliteName}`,
       "-l",
-      "type=satellite-server",
+      "type=satellite-web-server",
       "-o",
       "name",
     ];

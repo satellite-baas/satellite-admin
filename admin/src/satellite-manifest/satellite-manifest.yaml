@@ -19,7 +19,7 @@ spec:
     - match: HostRegexp(`${SATELLITE_NAME}.{.+}.{.+}`) 
       kind: Rule
       services:
-      - name: satellite-server
+      - name: satellite-web-server
         namespace: ${SATELLITE_NAME}
         passHostHeader: true
         port: 80
@@ -30,21 +30,18 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: satellite-server
+  name: satellite-web-server
   namespace: ${SATELLITE_NAME}
   labels:
-    type: satellite-server
+    type: satellite-web-server
 spec:
   type: ClusterIP
   ports:
     - port: 80
       targetPort: 80
       name: web-server
-    - port: 5000
-      targetPort: 5000
-      name: app-server
   selector:
-    type: satellite-server
+    type: satellite-web-server
 
 ---
 
@@ -52,29 +49,55 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: satellite-server
+  name: satellite-web-server
   namespace: ${SATELLITE_NAME}
   labels:
-    type: satellite-server
+    type: satellite-web-server
 spec:
   template:
     metadata:
       namespace: ${SATELLITE_NAME}
       labels:
-        type: satellite-server
+        type: satellite-web-server
     spec:
       containers:
         - name: satellite-web-server
           image: ilyaskussainov/satellite-webserver:v2
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 80
           volumeMounts:
             - mountPath: /media/data
               name: storage
+      volumes:
+        - name: storage
+          emptyDir: {}
+  selector:
+    matchLabels:
+      type: satellite-web-server
+  replicas: 1
+
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: satellite-app-server
+  namespace: ${SATELLITE_NAME}
+  labels:
+    type: satellite-app-server
+spec:
+  template:
+    metadata:
+      namespace: ${SATELLITE_NAME}
+      labels:
+        type: satellite-app-server
+    spec:
+      containers:
         - name: satellite-app
           image: ilyaskussainov/satellite-app:v2
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 5000
           volumeMounts:
@@ -91,8 +114,26 @@ spec:
           emptyDir: {}
   selector:
     matchLabels:
-      type: satellite-server
+      type: satellite-app-server
   replicas: 1
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: satellite-app-server
+  namespace: ${SATELLITE_NAME}
+  labels:
+    type: satellite-app-server
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5000
+      targetPort: 5000
+      name: app-server
+  selector:
+    type: satellite-app-server
 
 ---
 
