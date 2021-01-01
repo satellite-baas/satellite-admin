@@ -1,11 +1,16 @@
 const express = require("express");
-const { upload, uploadFile } = require("../controllers/Upload");
+const { upload, makeFileUploadController } = require("../controllers/Upload");
 const { ensureLogIn } = require("../controllers/Auth");
 
-const router = express.Router();
+const makeFileUploadRouter = (Backend) => {
+  const router = express.Router();
+  const fileUploadController = makeFileUploadController(Backend);
 
-router.post("/upload", upload, uploadFile);
+  router.post("/upload", ensureLogIn, upload, fileUploadController);
+
+  return router;
+};
 
 module.exports = {
-  uploadRouter: router,
+  makeFileUploadRouter,
 };

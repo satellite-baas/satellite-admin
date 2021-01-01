@@ -9,7 +9,7 @@ const configurePassport = require("./helpers/configure-passport");
 const makeAuthRouter = require("./routes/auth");
 const makeBackendRouter = require("./routes/backend");
 const makeProxyRouter = require("./routes/proxy");
-const { uploadRouter } = require("./routes/upload");
+const { makeFileUploadRouter } = require("./routes/upload");
 
 (async function () {
   await sequelize.sync({});
@@ -19,11 +19,6 @@ const { uploadRouter } = require("./routes/upload");
 
   var corsOptions = { origin: true, credentials: true };
   app.use(cors(corsOptions));
-
-  app.use(uploadRouter);
-
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: true }));
 
   const redisClient = redis.createClient({
     host: process.env.REDIS_HOST,
@@ -58,6 +53,12 @@ const { uploadRouter } = require("./routes/upload");
 
   app.use(passport.initialize());
   app.use(passport.session());
+
+  const fileUploadRouter = makeFileUploadRouter(Backend);
+  app.use(fileUploadRouter);
+
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
 
   const authRouter = makeAuthRouter(passport, User);
   const backendRouter = makeBackendRouter(Backend);

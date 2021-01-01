@@ -1,5 +1,4 @@
 const { spawn } = require("child_process");
-const { resolve } = require("path");
 
 const CREATE_ARGUMENTS = [
   "-c",

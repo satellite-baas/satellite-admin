@@ -1,10 +1,7 @@
 const multer = require("multer");
 const fs = require("fs-extra");
 const extract = require("extract-zip");
-const {
-  getWebServerPodName,
-  uploadStaticFiles,
-} = require("../helpers/kubernetes");
+const { uploadStaticFiles } = require("../helpers/kubernetes");
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -33,28 +30,37 @@ const unZip = async (filePath, dirName) => {
   }
 };
 
-const uploadFile = async (req, res, next) => {
-  const filePath = req.file.path;
-  const satelliteId = req.body.id;
+const makeFileUploadController = (Backend) => {
+  const uploadFile = async (req, res, next) => {
+    const filePath = req.file.path;
+    const id = req.body.id;
+    const UserId = req.user.id;
 
-  await unZip(filePath, satelliteId);
-  console.log("got here");
-  await fs.remove(filePath);
-  console.log("Did I get here?");
+    const satellite = await Backend.findOne({ where: { id, UserId } });
+    if (!satellite) {
+      await fs.remove(filePath);
+      return res.sendStatus(404);
+    }
 
-  const podName = await getWebServerPodName("testapp");
+    const satelliteName = satellite.name;
 
-  try {
-    uploadStaticFiles("testapp", `/uploads/${satelliteId}`);
-  } catch (err) {
-    console.log(err);
-  }
-  console.log(podName);
+    await unZip(filePath, satelliteName);
+    await fs.remove(filePath);
 
-  return res.json({ message: "uploaded!" });
+    try {
+      await uploadStaticFiles(satelliteName, `/uploads/${satelliteName}`);
+    } catch (err) {
+      console.log(err);
+      res.sendStatus(500);
+    }
+
+    return res.json({ message: "uploaded!" });
+  };
+
+  return uploadFile;
 };
 
 module.exports = {
   upload,
-  uploadFile,
+  makeFileUploadController,
 };
