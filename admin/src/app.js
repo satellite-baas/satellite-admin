@@ -1,6 +1,5 @@
 const express = require("express");
 const sequelize = require("./models/index");
-const cors = require("cors");
 const uuid = require("uuid").v4;
 const session = require("express-session");
 const redis = require("redis");
@@ -16,9 +15,6 @@ const { makeFileUploadRouter } = require("./routes/upload");
   const { User, Backend } = sequelize.models;
 
   const app = express();
-
-  var corsOptions = { origin: true, credentials: true };
-  app.use(cors(corsOptions));
 
   const redisClient = redis.createClient({
     host: process.env.REDIS_HOST,
