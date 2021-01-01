@@ -4,13 +4,15 @@ const axios = require("axios");
 const PORT = 5000;
 
 function getUrl(satelliteName, path) {
-  return `http://satellite-server.${satelliteName}.svc.cluster.local:${PORT}${path}`;
+  return `http://satellite-app-server.${satelliteName}.svc.cluster.local:${PORT}${path}`;
 }
 
 function makeCustomSatelliteController(Backend) {
   async function uploadSchema(req, res) {
     const { id } = req.body;
     const file = req.files[0];
+    console.log(`File: ${file}`);
+    console.log(`Id: ${id}`);
     if (!id || !file) return res.status(422).send();
 
     const schemaBuffer = file.buffer;
@@ -24,42 +26,11 @@ function makeCustomSatelliteController(Backend) {
 
     try {
       const response = await axios.post(url, schemaBuffer);
-      return res.status(201).send(response.data);
-    } catch (error) {
-      if (error.response) {
-        return res.status(error.response.status).send(error.response.data);
-      } else {
-        return res.sendStatus(500);
+
+      if (response.data.errors) {
+        return res.status(422).send(response.data);
       }
-    }
-  }
 
-  async function uploadStaticFiles(req, res) {
-    const { id } = req.body;
-    const file = req.files[0];
-    if (!id || !file) return res.status(422).send();
-
-    const fileBuffer = file.buffer;
-
-    const UserId = req.user.id;
-    const satellite = await Backend.findOne({ where: { id, UserId } });
-    if (!satellite) return res.sendStatus(404);
-
-    const satelliteName = satellite.name;
-    const url = getUrl(satelliteName, "/upload");
-
-    const originalName = file.originalname;
-
-    const form = new FormData();
-    form.append("staticFile", fileBuffer, originalName);
-
-    try {
-      const response = await axios.post(url, form, {
-        headers: {
-          "Content-Type": `multipart/form-data; boundary=${form._boundary}`,
-        },
-        maxBodyLength: 209715200,
-      });
       return res.status(201).send(response.data);
     } catch (error) {
       if (error.response) {
@@ -196,7 +167,6 @@ function makeCustomSatelliteController(Backend) {
 
   return {
     uploadSchema,
-    uploadStaticFiles,
     getFiles,
     deleteFile,
     getHealth,

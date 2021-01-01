@@ -9,15 +9,12 @@ function makeProxyRouter(Backend) {
   const router = express.Router();
   const {
     uploadSchema,
-    uploadStaticFiles,
     getFiles,
     deleteFile,
     getHealth,
     sendGQL,
     sendAdminGQL,
   } = makeCustomSatelliteController(Backend);
-
-  // router.post("/upload", upload.any(), ensureLogIn, uploadStaticFiles);
 
   router.post("/admin/schema", upload.any(), ensureLogIn, uploadSchema);
 
