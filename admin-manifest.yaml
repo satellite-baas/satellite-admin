@@ -443,6 +443,10 @@ spec:
         - name: admin-database
           image: postgres
           imagePullPolicy: IfNotPresent
+          livenessProbe:
+            exec:
+              command: ["psql", "-U", "postgres", "-d", "postgres", "-h", "127.0.0.1"]
+            initialDelaySeconds: 10
           ports:
             - containerPort: 5432
           env:

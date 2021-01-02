@@ -64,6 +64,11 @@ spec:
         - name: satellite-web-server
           image: ilyaskussainov/satellite-webserver:v2
           imagePullPolicy: Always
+          livenessProbe: 
+            httpGet:
+              path: /nginx-health
+              port: 80
+            initialDelaySeconds: 5
           ports:
             - containerPort: 80
           volumeMounts:
@@ -171,6 +176,11 @@ spec:
         - name: alpha
           image: dgraph/dgraph:latest
           imagePullPolicy: IfNotPresent
+          livenessProbe: 
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 15
           ports:
             - containerPort: 8080
               name: http-alpha
