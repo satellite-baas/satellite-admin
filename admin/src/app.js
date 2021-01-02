@@ -64,8 +64,9 @@ const { makeFileUploadRouter } = require("./routes/upload");
   app.use(authRouter);
   app.use(backendRouter);
 
+  // Liveness probe
   app.get("/", (req, res) => {
-    res.send(`You hit home page!\n`);
+    res.sendStatus(200);
   });
 
   app.listen(3000);
