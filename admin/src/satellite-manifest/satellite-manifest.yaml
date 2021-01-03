@@ -74,6 +74,10 @@ spec:
           volumeMounts:
             - mountPath: /media/data
               name: storage
+          resources: 
+            requests: 
+              memory: "50mi"
+              cpu: "100"
       volumes:
         - name: storage
           emptyDir: {}
@@ -113,6 +117,10 @@ spec:
               value: ${API_KEY}
             - name: SATNAME
               value: ${SATELLITE_NAME}
+          resources: 
+            requests: 
+              memory: "100mi"
+              cpu: "200"
 
       volumes:
         - name: storage
@@ -173,6 +181,10 @@ spec:
               name: dgraph-data
           command: ["dgraph"]
           args: ["zero", "--my=localhost:5080"]
+          resources: 
+            requests: 
+              memory: "200Mi"
+              cpu: "500m"
         - name: alpha
           image: dgraph/dgraph:latest
           imagePullPolicy: IfNotPresent
@@ -190,6 +202,10 @@ spec:
             - mountPath: /dgraph
               name: dgraph-data
           command: ["dgraph"]
+          resources: 
+            requests: 
+              memory: "200Mi"
+              cpu: "500m"
           args: ["alpha", "--my=localhost:7080", "--zero=localhost:5080", "--graphql_extensions=false", "--lru_mb=1024", "--whitelist", "0.0.0.0/0"]
       volumes:
         - name: dgraph-data
