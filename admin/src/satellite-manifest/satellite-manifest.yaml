@@ -5,6 +5,35 @@ metadata:
 
 ---
 
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: satellite-network-policy
+  namespace: ${SATELLITE_NAME}
+spec:
+  podSelector: 
+    matchLabels:
+      network: ${SATELLITE_NAME}
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress: 
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          type: admin
+      podSelector:
+        matchLabels:
+          network: admin
+    - podSelector: 
+        matchLabels:
+          network: ${SATELLITE_NAME}
+  egress:
+  - {}   
+
+
+---
+
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
 metadata:
@@ -53,12 +82,14 @@ metadata:
   namespace: ${SATELLITE_NAME}
   labels:
     type: satellite-web-server
+    network: ${SATELLITE_NAME}
 spec:
   template:
     metadata:
       namespace: ${SATELLITE_NAME}
       labels:
         type: satellite-web-server
+        network: ${SATELLITE_NAME}
     spec:
       containers:
         - name: satellite-web-server
@@ -76,8 +107,8 @@ spec:
               name: storage
           resources: 
             requests: 
-              memory: "50mi"
-              cpu: "100"
+              memory: "50Mi"
+              cpu: "100m"
       volumes:
         - name: storage
           emptyDir: {}
@@ -96,12 +127,14 @@ metadata:
   namespace: ${SATELLITE_NAME}
   labels:
     type: satellite-app-server
+    network: ${SATELLITE_NAME}
 spec:
   template:
     metadata:
       namespace: ${SATELLITE_NAME}
       labels:
         type: satellite-app-server
+        network: ${SATELLITE_NAME}
     spec:
       containers:
         - name: satellite-app
@@ -119,8 +152,8 @@ spec:
               value: ${SATELLITE_NAME}
           resources: 
             requests: 
-              memory: "100mi"
-              cpu: "200"
+              memory: "100Mi"
+              cpu: "200m"
 
       volumes:
         - name: storage
@@ -157,6 +190,7 @@ metadata:
   namespace: ${SATELLITE_NAME}
   labels:
     type: dgraph
+    network: ${SATELLITE_NAME}
 spec:
   selector:
     matchLabels:
@@ -166,6 +200,7 @@ spec:
       namespace: ${SATELLITE_NAME}
       labels:
         type: dgraph
+        network: ${SATELLITE_NAME}
     spec:
       containers:
         - name: zero

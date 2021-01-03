@@ -172,6 +172,8 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: admin
+  labels:
+    type: admin
 
 ---
 
@@ -190,6 +192,7 @@ metadata:
   namespace: admin
   labels: 
     app: traefik
+    network: admin
 spec:
   replicas: 1
   selector:
@@ -199,6 +202,7 @@ spec:
     metadata:
       labels:
         app: traefik
+        network: admin
     spec:
       serviceAccountName: traefik-ingress-controller
       containers: 
@@ -350,12 +354,14 @@ metadata:
   namespace: admin
   labels:
     type: admin-app-server
+    network: admin
 spec:
   template:
     metadata:
       namespace: admin
       labels:
         type: admin-app-server
+        network: admin
     spec:
       serviceAccountName: admin-app
       containers:
@@ -495,14 +501,14 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: escalated-permission
+  name: admin-permission
 subjects:
 - kind: ServiceAccount
   name: admin-app
   namespace: admin
 roleRef:
   kind: ClusterRole 
-  name: edit
+  name: cluster-admin
   apiGroup: rbac.authorization.k8s.io
 
 ---
