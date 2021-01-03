@@ -554,3 +554,122 @@ spec:
       targetPort: 6379
   selector:
     type: admin-session
+
+--- 
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: traefik-policy
+  namespace: admin
+spec:
+  podSelector: 
+    matchLabels:
+      app: traefik
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress: 
+  - {}
+  egress:
+  - {}
+
+--- 
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: db-policy
+  namespace: admin
+spec:
+  podSelector: 
+    matchLabels:
+      type: admin-database
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress: 
+  - from:
+    - podSelector: 
+        matchLabels:
+          type: admin-app-server
+  egress:
+  - {}   
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: web-policy
+  namespace: admin
+spec:
+  podSelector: 
+    matchLabels:
+      type: admin-web-server
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress: 
+  - from:
+    - podSelector: 
+        matchLabels:
+          app: traefik
+  egress:
+  - {}   
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: session-policy
+  namespace: admin
+spec:
+  podSelector: 
+    matchLabels:
+      type: admin-session
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress: 
+  - from:
+    - podSelector: 
+        matchLabels:
+          type: admin-app-server
+  egress:
+  - {}   
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: app-policy
+  namespace: admin
+spec:
+  podSelector: 
+    matchLabels:
+      type: admin-app-server
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress: 
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          type: satellite
+      podSelector:
+        matchLabels:
+          type: satellite-app-server
+    - podSelector: 
+        matchLabels:
+          type: admin-session
+    - podSelector: 
+        matchLabels:
+          type: admin-database
+    - podSelector:
+        matchLabels:
+          app: traefik
+  egress:
+  - {}   
