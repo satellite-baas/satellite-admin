@@ -176,6 +176,8 @@ spec:
               value: postgres
             - name: DB_HOST
               value: "admin-database"
+            - name: DOMAIN_NAME
+              value: "${DOMAIN_NAME}"
   selector:
     matchLabels:
       type: admin-app-server
