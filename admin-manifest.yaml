@@ -38,8 +38,6 @@ spec:
               containerPort: 80
             - name: websecure
               containerPort: 443
-            - name: admin
-              containerPort: 8080
 
 ---
 
