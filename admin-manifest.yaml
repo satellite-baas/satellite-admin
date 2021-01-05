@@ -27,7 +27,7 @@ spec:
             - --entrypoints.web.Address=:80
             - --entrypoints.websecure.Address=:443
             - --certificatesresolvers.myresolver.acme.tlschallenge
-            - --certificatesresolvers.myresolver.acme.email=ilkussainov@gmail.com
+            - --certificatesresolvers.myresolver.acme.email=${EMAIL}
             - --certificatesresolvers.myresolver.acme.storage=acme.json
             - --entrypoints.web.http.redirections.entryPoint.to=websecure
             - --entrypoints.web.http.redirections.entryPoint.scheme=https
@@ -55,7 +55,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: HostRegexp(`admin.{.+}.{.+}`) && (Path(`/{p:.+\..+}`) || Path(`/`))
+    - match: Host(`admin.${DOMAIN_NAME}`) && (Path(`/{p:.+\..+}`) || Path(`/`))
       kind: Rule
       services:
       - name: admin-web-server
@@ -124,7 +124,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: HostRegexp(`admin.{.+}.{.+}`)
+    - match: Host(`admin.${DOMAIN_NAME}.com`)
       kind: Rule
       services:
       - name: admin-app-server
