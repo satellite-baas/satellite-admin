@@ -45,7 +45,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: HostRegexp(`${SATELLITE_NAME}.{.+}.{.+}`) 
+    - match: Host(`${SATELLITE_NAME}.${DOMAIN_NAME}`) 
       kind: Rule
       services:
       - name: satellite-web-server

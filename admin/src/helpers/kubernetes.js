@@ -13,6 +13,7 @@ const spinUpSatellite = (name, apiKey, onSuccess, onFailure) => {
     env: {
       ...process.env,
       SATELLITE_NAME: name,
+      DOMAIN_NAME: process.env.DOMAIN_NAME,
       API_KEY: apiKey,
     },
   });
