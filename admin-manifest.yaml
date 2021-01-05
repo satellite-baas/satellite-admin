@@ -122,7 +122,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`admin.${DOMAIN_NAME}.com`)
+    - match: Host(`admin.${DOMAIN_NAME}`)
       kind: Rule
       services:
       - name: admin-app-server
